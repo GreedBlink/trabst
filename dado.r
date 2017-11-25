@@ -36,9 +36,12 @@ monthplot(st)
 #Modelo de Box & Jenkins
 
 
+<<<<<<< HEAD
 modelo = auto.arima(st)
 
 BETS.t_test(modelo)
+=======
+>>>>>>> 9d1363c84060b10ad1dd728d65d1bd65f02585a6
 
 #Estatísticas de Aderência ???
 
