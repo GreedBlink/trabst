@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ---
 title: "Análise - PIM -PF"
 author: "Jonatha Azevedo e Leonardo Filgueira"
@@ -100,7 +99,7 @@ adf.test(dados)
 ```{r identificacao2, fig.align='center',message=FALSE}
 require(forecast)
 modelo = auto.arima(dados)
-modelo
+
 ```
  
  Identificado o modelo `ARIMA(2,1,2)(1,1,2)` podemos verificar de forma rápida, se os parametros do modelo são significativos. 
@@ -120,10 +119,8 @@ modelo$coef = modelo$coef[-length(modelo$coef)]
  Com isso, temos um modelo `SARIMA(2,1,2)(1,1,0)`
  
  
-```{r criacao do modelo}
-
-fit.pim = Arima(dados,order=c(2,1,2),seasonal = c(1,1,0),method = "ML",lambda = 0)
-summary(fit.pim)
+```{r}
+fit.pim = arima(dados, order = c(2,1,2), seasonal = c(1,1,0), method = "ML", lambda = 0)
 ```
  
  
@@ -141,63 +138,3 @@ summary(fit.pim)
 
 
 
-=======
----
-title: "Análise - PIM -PF"
-author: "Jonatha Azevedo e Leonardo Filgueira"
-date: "November 25, 2017"
-output: html_document
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-# Os dados
-
-A série que usaremos no trabalho é a produção física industrial produzida pelo IBGE, sem ajuste sazonal e no ínidice de base fixa com base em 2002 = 100. Os dados variam de jan/2002 a out/2017.
-
-Utilizando o pacote `BETS` podemos obter esse dado atualizado em tempo real atráves da API do SIDRA. 
-
-
-```{r, message=FALSE}
-require(BETS)
-dados = BETS.sidra.get(x = c(3653), from = c("200201"), to = c("201710"), territory = "brazil",variable = 3135, sections = c(129316), cl = 544)
-
-## transformando os dados em um objeto TS
-dados = dados$serie_3653
-dados = ts(dados$Valor,start = c(2002,01),frequency = 12)
-head(dados)
-```
-
-## Cálculo dos índices
-
-(Ver qual índice exatamente)
-De acordo com [documentação no site do IBGE](https://ww2.ibge.gov.br/home/estatistica/indicadores/industria/pimpfbr/srmindconjind.pdf), o indicador é calculado pela razão do produto de preços e quantidades, resultando em algo adimensional. São feitas manipulações algébricas, mas pelo que pude ver de maneira rápida, não "aparece" nada com unidade pro indicador. 
-
-# Análise Gráfica
-
-Com os gráficos, podemos ver e associar acontecimentos que influênciam o comportamento da série temporal, nos dando um feeling sobre o que acontece.
-
-```{r,message=FALSE,fig.align='center',out.width="90%"}
-require(dygraphs)
-dygraph(dados)
-```
-
-
-Podemos ver que no final de  2008 a série foi radicalmente afetada pela crise economica assumindo um valor bem diferente do que do comportamento da habitual da série.
-
-```{r,fig.align='center'}
-plot(dados)
-abline(h = seq(70,110,5), v = seq(2003,2017,1), lty = 3, col = "darkgrey")
-```
-
-
-```{r,fig.align='center'}
-monthplot(dados)
-```
-
-Percebe-se que a série tem um média maior em outubro podemos justificar pelo aquecimento do mercado devido às comemorações de final de ano.
-
-Fica claro com o auxílio do `monthplot` que a série tem comportamento sazonal. Repare que dos meses de janeiro a outrubro o indice é crescente, mas para os outros dois meses não
->>>>>>> 9d1363c84060b10ad1dd728d65d1bd65f02585a6
