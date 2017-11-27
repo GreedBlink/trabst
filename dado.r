@@ -16,33 +16,32 @@ st = ts(st$Valor,start = c(2002,01),frequency = 12)
 # analise grafica
 #plot normal
 plot(st)
+
 abline(h = seq(70,110,5), v = seq(2003,2017,1), lty = 3, col = "darkgrey")
 #utilizando o dygraph
 dygraph(st)
 #utiliazndo o monthplot
 monthplot(st)
 
-# O que da pra notar:
+
+#MA -> ACF
+#AR -> PACF
+
+acf(st,lag.max = 48)
+#Demora muito a cair, provavelmete nao estacionaria. MAs teremos certeza disso com o teste 
+#raiz unitaria
+pacf(st,lag.max = 48)
+
+# com difereicniacao
 
 
+acf(diff(st),lag.max = 48)
+#ARIMA(3,1,1)
+pacf(diff(st),lag.max = 48)
 
+#parte sazonal
+pacf(diff(diff(st,lag = 12)), 48)
+acf(diff(diff(st,lag=12)),48)
 
-
-
-#modelo de holt-winters
-
-
-
-#Modelo de Box & Jenkins
-
-
-
-modelo = auto.arima(st)
-
-BETS.t_test(modelo)
-
-
-#Estatísticas de Aderência ???
-
-
-
+#(0,1,0)
+modelo = Arima(st,order = c(3,1,3), seasonal =  c(1,1,2))
