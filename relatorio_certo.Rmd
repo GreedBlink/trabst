@@ -1,0 +1,85 @@
+---
+title: "Relatorio - certo"
+author: "Jonatha Azevedo e Leonardo Filgueira"
+date: "November 29, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r dados, message=FALSE}
+require(BETS)
+dados <-  BETS.sidra.get(x = c(3653), from = c("200201"), to = c("201710"), territory = "brazil",
+                         variable = 3135, sections = c(129316), cl = 544)
+dados <- ts(dados$serie_3653$Valor,start = c(2002,01),frequency = 12)
+```
+
+
+## Análise gráfica
+
+
+```{r graficos1,fig.align='center'}
+plot.ts(dados)
+```
+
+
+
+```{r graficos2,fig.align='center'}
+pim = dados
+monthplot(pim,col.base=2,lty.base=2)
+legend("topleft",legend=c("pim","media"),lty=c(1,2),col=c(1,2),bty="n")
+```
+
+Com o auxilio do gráfico podemos verificar que:
+
+  - Tem característica sazonal, uma vez que de janeiro a outrubro o índice é crescente e nos outros meses é decrescente. O que se repete todos os anos.
+  - Pensando na crise economica de 2008 a produção industrial é bem afetada atingindo um valor discrepante em relação ao comportamento habitual e, logo após, parece se manter estável.
+  - Parace ter variação constante, sendo não necessário transformar os dados. Veja:
+  
+```{r,message=FALSE,fig.align='center'}
+par(mfrow=c(1,2))
+plot.ts(dados)
+plot.ts(log(dados))
+
+```
+  
+  - Não há mudança de variabilidade quando transformamos os dados, passando o logaritmo.
+  
+  
+  
+## Decomposição 
+
+
+Podemos utilizar o comando `decompose` para verificar algumas componentes não tão claros com o plot.ts, ou seja, podemos verificar: 
+
+  - tendência + ciclo
+  - sazonalidade
+  - erro (resíduo)
+
+```{r decompose,fig.align='center'}
+
+plot(decompose(pim))
+
+```
+
+No gráfico, podemos verificar uma tendencia positiva, mas um quebra estrutural causada pela crise economica de 2008. Podemos verificar que realmente há sazonalidade na série temporal.
+
+Agora, temos que vereficiar a estacionáriedade da parte não sazonal e da parte sazonal.
+
+
+### Parte não sazonal
+
+Há quatro maneiras de observar se a série temporal em estudo é ou não estacionária:
+
+   - Análise gráfica;
+   - Comparação da média e da variância da ST para diferentes períodos de tempo;
+   - Observação da FAC (função de autocorrelação)
+   - Testes de raiz unitária
+   
+```{r fac1,fig.align='center'}
+BETS.corrgram(pim,lag.max=48)
+```
+   
+   
