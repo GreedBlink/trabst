@@ -14,6 +14,8 @@ monthplot(dados)
 
 #tendencia 
 
+#podemos ver um aumento na produção 
+
 #variancia 
 
 #sazonalidade

@@ -78,8 +78,55 @@ Há quatro maneiras de observar se a série temporal em estudo é ou não estaci
    - Observação da FAC (função de autocorrelação)
    - Testes de raiz unitária
    
-```{r fac1,fig.align='center'}
-BETS.corrgram(pim,lag.max=48)
+```{r fac1,fig.align='center',fig.width=4.5,fig.height=2.5}
+BETS.corrgram(pim,lag.max=36,knit = TRUE)
 ```
    
+### Testando estacionariedade
+
+Considerando as seguintes hipótese:
+
+H_0: A série temporal possui raiz unitária -> a série é não estacionária
+
+H_1: A série temporal não possui raiz unitária -> a série é estacionária
+
+```{r estacionariedade,message=FALSE,fig.align='center',fig.width=4.5,fig.height=2.5}
+require(forecast)
+require(TSA)
+require(urca)
+adf.test(pim) 
+pim.drift <- ur.df(pim,type = c("drift"),lags=24,selectlags = "AIC")
+BETS.corrgram(pim.drift@res,lag.max=36,knit = TRUE)
+```
+
+   Sendo o p-valor igual a `0,04019`, rejeitamos a hipótese nula, ou seja, a série temporal é estacionária. 
+   
+```{r}
+adf.test(pim)
+```
+
+
+### Verificando a ordem do modelo geral SARIMA(p,d,q)(P,D,Q)
+
+Verificando a parte de médias móveis 
+```{r,fig.align='center'}
+acf(pim,lag.max = 48)
+```
+
+Parece ser não estacionária!
+
+
+verificando a parte autorregressiva
+
+```{r,fig.align='center'}
+pacf(pim,lag.max = 48)
+```
+
+Aplicando diferenciação 
+
+```{r, fig.align='center'}
+acf(diff(pim),lag.max = 48)
+```
+
+
    
