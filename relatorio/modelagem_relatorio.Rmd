@@ -24,7 +24,8 @@ require(TSA)
 require(dygraphs)
 require(tidyr)
 dados <-  BETS.sidra.get(x = c(3653), from = c("200201"), to = c("201710"), territory = "brazil",variable = 3135, sections = c(129316), cl = 544)
-dados <- ts(dados$serie_3653$Valor,start = c(2002,01),end =c(2017,09),frequency = 12)
+dados <- ts(dados$serie_3653$Valor,start = c(2002,01),frequency = 12)
+dados <- window(dados,start = c(2002,01),end =c(2017,09),freq=12)
 ```
 <br><br>
 
@@ -65,17 +66,21 @@ acf(dados_diff,lag.max = 48)
 ```
 
 
-Podemos identificar uma ordem 2 para parte de médias móveis. Olhando a fac parcial para obtermos a ordem da parte autorregressiva: 
+Testando a estacionariedade com os dados diferenciados
 
-```{r,message=FALSE,fig.align='center'}
-pacf(dados_diff,lag.max = 48)
+```{r}
+adf.test(dados_diff)
 ```
 
-Considerando a parte sazonal, temos: 
+
+
+Fazendo mais uma dirença, na parte sazonal, temos: 
 ```{r,message=FALSE,fig.align='center'}
 dados_diff_seasonal = diff(dados_diff,lag=12)
 acf(dados_diff_seasonal,lag=48)
 ```
+
+Podemos identificar uma ordem 2 para parte de médias móveis não sazonal e 1 ordem para a parte sazonal. Olhando a fac parcial para obtermos a 
 
 
 Para a parte autorregressiva sazonal: 
@@ -84,11 +89,27 @@ Para a parte autorregressiva sazonal:
 pacf(dados_diff_seasonal,lag=48)
 ```
 
+Ordem 3 para a parte autorregressiva não sazonal e 1 ordem para a parte autorregressiva na parte sazonal.
 
 
 ```{r,message=FALSE,fig.align='center'}
+modelo = Arima(dados,order= c(3,1,2),seasonal = c(1,1,1),lambda = 0)
+
+```
+
+Veja a significância dos parametros com a BETS.t_test():
+
+```{r}
+BETS.t_test(modelo)
+```
+
+
+Vemos que o parametro autorregressivo sazonal é não significativo e é preciso retirá-lo do modelo:
+
+```{r}
 modelo = Arima(dados,order= c(3,1,2),seasonal = c(0,1,1),lambda = 0)
 ```
+
 
 Note que o parâmetro **`lambda`** receb o valor **`0`**. Isso significa que transformamos os dados passando o **`log`**. Usualmente, buscamos uma transformação pra controlar a variação, dessa forma, conseguimos captar melhor o modelo. Porém, nesse caso específico, o log nos ajuda a controlar os resíduos. 
 
@@ -221,9 +242,9 @@ funcao <- function(h,dados,order,seasonal,lambda){
     previsao2 <- forecast(aux1,h=h,xreg = y_dummy_prev2)$mean
     
     ##comparando as previsões junto com os dados originais
-    ts.plot(previsoes,previsao2,col=c(1,4))
-    lines(dados,col=2)
-    legend("topleft",legend = c("Dados","prev. mes a mes", "previsao normal"),lty = c(1,1,1),col = c(1,2,4),bty="n")
+    ts.plot(previsoes,previsao2,col=c(1,4),lty = c(1,2))
+    lines(dados,col=2,lty = c(3))
+    legend("topleft",legend = c("Dados","prev. mes a mes", "previsao normal"),lty = c(1,2,3),col = c(1,2,4),bty="n")
   
     return(list(prev1 = previsoes, prev2 = previsao2))
 }

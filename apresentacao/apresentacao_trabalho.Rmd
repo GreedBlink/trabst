@@ -21,12 +21,14 @@ logo<-"teste.jpeg"
 ```
 ## Produção Física Industrial
 
-A pesquisa Industrial Mensal da Produção Física - Brasil tem como objetivo principal:
+A pesquisa Industrial Mensal da Produção Física - Brasil tem como objetivos:
   
   
   - Servir como medida da evolução de curto prazo do valor adicionado da indústria, dado um determinado período de referência. 
+  - Refletir rapidamente a trajetória da atividade fabril no curto prazo;
+  - Importante dado de insumo para o PIB (Produto Interno Bruto)
   
-  
+![Caption for the picture.]()
   
 ## Os dados  
   
