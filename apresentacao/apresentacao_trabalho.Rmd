@@ -1,0 +1,93 @@
+---
+title: "Modelagem  - Trabalho de Séries Temporais"
+author: "Jonatha Azevedo, Leonardo Filgueira, George Amarante e Matheus Camelo"
+date: "December 4, 2017"
+output: 
+  ioslides_presentation:
+    incremental: true
+    fig_width: 8
+    fig_height: 4
+    fig_caption: true
+    logo: teste.jpeg
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+```{r, echo=FALSE}
+logo<-"teste.jpeg"
+```
+## Produção Física Industrial
+
+A pesquisa Industrial Mensal da Produção Física - Brasil tem como objetivo principal:
+  
+  
+  - Servir como medida da evolução de curto prazo do valor adicionado da indústria, dado um determinado período de referência. 
+  
+  
+  
+## Os dados  
+  
+```{r, echo=FALSE,message=FALSE,fig.align='center',eval=TRUE}
+require(BETS)
+require(forecast)
+require(TSA)
+require(dygraphs)
+``` 
+
+
+```{r, echo=FALSE,message=FALSE,fig.align='center',eval=TRUE}
+dados <-  BETS.sidra.get(x = c(3653), from = c("200201"), 
+to = c("201710"), territory = "brazil",variable = 3135, 
+sections = c(129316), cl = 544)
+dados <- ts(dados$serie_3653$Valor,start = c(2002,01),frequency = 12)
+```
+  
+  
+```{r, echo=TRUE,message=FALSE,fig.align='center',eval=TRUE}
+dygraphs::dygraph(dados)
+```
+
+## Decomposição
+
+```{r, echo=TRUE,message=FALSE,fig.align='center',eval=TRUE}
+plot((decompose(dados)))
+```
+
+## Grafico da série por meses
+
+  
+```{r, echo=FALSE,message=FALSE,fig.align='center',eval=TRUE}
+monthplot(dados,col.base=2,lty.base=2)
+legend("topleft",legend=c("PIM-PF","Média"),lty = c(1,2),col=c(1,2),bty="n")
+abline(h = seq(70,110,5), v = seq(2002,2016,1), lty = 3, col = "darkgrey")
+```
+
+
+## Análise exploratória
+
+O que podemos observar com os gráficos, antes de modelar de fato a série temporal: 
+
+ - 
+
+
+## Slide with Bullets
+
+- Bullet 1
+- Bullet 2
+- Bullet 3
+
+## Slide with R Output
+
+```{r cars, echo = TRUE}
+summary(cars)
+```
+
+## Slide with Plot
+
+```{r pressure}
+plot(pressure)
+```
+

@@ -1,0 +1,263 @@
+---
+title: "Modelagem"
+author: "Jonatha Azevedo, Leonardo Filgueira, George Amarante e Matheus Camelo"
+date: "December 4, 2017"
+output: html_document
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Pegando os dados
+
+
+Os dados usados na modelagem são referen a Produção Física Industrial sem ajuste sazonal com ano base 2012. Disponibilzados pelo IBGE (Instituto Brasileiro de Geografia e Estatística).
+
+
+```{r,message=FALSE}
+require(BETS)
+require(forecast)
+require(normtest)
+require(TSA)
+require(dygraphs)
+require(tidyr)
+dados <-  BETS.sidra.get(x = c(3653), from = c("200201"), to = c("201710"), territory = "brazil",variable = 3135, sections = c(129316), cl = 544)
+dados <- ts(dados$serie_3653$Valor,start = c(2002,01),frequency = 12)
+
+```
+<br><br>
+
+```{r,message=FALSE,fig.align='center',fig.width=9, fig.height=4}
+dygraph(dados) %>% dyRangeSelector()
+``` 
+
+<br><br>
+
+
+
+
+É interessante notar o logarítimo dos dados, ele não muda de fato a série, mas veremos que ele nos ajuda a controlar os resíduos.
+
+```{r,message=FALSE,fig.align='center',fig.width=9, fig.height=4}
+dygraph(log(dados)) %>% dyRangeSelector()
+``` 
+
+
+
+### Analisando as correlações e correlações parciais
+
+
+```{r,message=FALSE,fig.align='center'}
+acf(dados,lag.max = 48)
+```
+
+Os dados são claramente não estacionário. Podemos considerar o teste de estacionáriedade: 
+
+```{r}
+adf.test(dados)
+```
+o `adf.test()` é um teste não paramétrico que pode ser não muito confiável. Vemos nesse caso que ele nos faz assumir características que não estão presente nos dados. Partimos para as diferenciações: 
+
+```{r,message=FALSE,fig.align='center'}
+dados_diff <- diff(dados)
+acf(dados_diff,lag.max = 48)
+```
+
+
+Podemos identificar uma ordem 2 para parte de médias móveis. Olhando a fac parcial para obtermos a ordem da parte autorregressiva: 
+
+```{r,message=FALSE,fig.align='center'}
+pacf(dados_diff,lag.max = 48)
+```
+
+Considerando a parte sazonal, temos: 
+```{r,message=FALSE,fig.align='center'}
+dados_diff_seasonal = diff(dados_diff,lag=12)
+acf(dados_diff_seasonal,lag=48)
+```
+
+
+Para a parte autorregressiva sazonal: 
+
+```{r,message=FALSE,fig.align='center'}
+pacf(dados_diff_seasonal,lag=48)
+```
+
+
+
+```{r,message=FALSE,fig.align='center'}
+modelo = Arima(dados,order= c(3,1,2),seasonal = c(0,1,1),lambda = 0)
+```
+
+Note que o parâmetro **`lambda`** receb o valor **`0`**. Isso significa que transformamos os dados passando o **`log`**. Usualmente, buscamos uma transformação pra controlar a variação, dessa forma, conseguimos captar melhor o modelo. Porém, nesse caso específico, o log nos ajuda a controlar os resíduos. 
+
+```{r,message=FALSE,fig.align='center'}
+BETS.t_test(modelo)
+```
+
+
+Com o auxílio da função **`BETS.t_test()`**, podemos verificar se os parametros do nosso modelo são significativos. Basicamente, é dividir a estimativa pelo desvio padrão. Dando diferente de 0, rejeitamos. 
+
+
+```{r,message=FALSE,fig.align='center'}
+tsdiag(modelo)
+```
+
+```{r,message=FALSE,fig.align='center'}
+shapiro.test(modelo$residuals)
+```
+
+Repare que os resíduos não possuem distribuição normal (**`p-value = 0.00518`**) e que esse modelo não capta bem a lineariedade dos dados, ou seja, não descartamos a hipótese de dependência linear (gráfico 3 do tsdiag). 
+Fica claro que no geral, não temos "bons" resíduos. Por exemplo, temos um **`outlier`** bem claro no primeiro gráfico do **`tsdiag`**. Precisamos identificá-lo. 
+
+```{r}
+x = (modelo$residuals - mean(modelo$residuals))/sd(modelo$residuals)
+round(x)
+```
+
+O interessante observar que esse outlier está atrelado a crise econômica (**-5, valor em dez/2008**). A série sofre bastante com essa quebra estrutural. Como dito anteriormente, assume um valor muito discrepante do resto dos dados. 
+
+Entçao, criamos uma variável explicativa para os resíduos, pois sem ela, dificilmente o modelo conseguiria captar. Utilizando a função **`BETS.dummy`**, temos:
+
+```{r}
+dummy <-  BETS.dummy(start = c(2002,01),end = c(2017,09),month =12 ,year = 2008 ,frequency = 12)
+dummy
+```
+
+Uma dummy é uma variável qualitativa, sendo o caso mas simples a variável que atribui 1 para uma categoria e 0 para a categoria mutuamente exclusiva a primeira.
+
+Com a variável criada, reestimamos os modelo adicionando essa variável dummy com o parâmetro **`xreg`** na função **`Arima()`**. 
+
+```{r}
+modelo2 <- Arima(dados,order= c(3,1,2),seasonal = c(0,1,1),lambda = 0,xreg=dummy)
+```
+
+
+Verificando o gráfico dos resíduos com o **`tsdiag`**, temos:
+
+
+```{r,message=FALSE,fig.align='center'}
+tsdiag(modelo2)
+```
+
+Já podemos verificar uma grande melhora: 
+
+   - Os resíduos paracem flutuar melhor em torno de 0 e não temos mais outlier, mas podemos ver pelo teste de normalidade:
+```{r}
+shapiro.test(modelo2$residuals)
+```
+   - Não temos nenhuma correlação significativa;
+   - E, parece, que o modelo está captando bem a lineariedade dos dados.
+
+
+Repetindo, verificamos quais parametros do novo modelo são significatens com a função **`BETS.t_test()`**: 
+
+```{r,message=FALSE,fig.align='center'}
+BETS.t_test(modelo2)
+```
+
+Podemos ver que a dummy é significativa, o que corrobora com a necessidade de introduzi-la ao modelo para controlar os resíduos, mas que o terceiro parâmetro da parte autorregressiva não é significativo e precisamos retirálo do modelo.
+
+```{r}
+modelo3 <- Arima(dados,order = c(2,1,2),seasonal = c(0,1,1),lambda = 0,xreg=dummy)
+```
+
+E verificando os resíduos:
+
+```{r,message=FALSE,fig.align='center'}
+tsdiag(modelo3)
+```
+
+Agora temos condições melhores com esse modelo. Podemos verificar a normalidade com o **`shapiro.test()`**
+
+```{r}
+shapiro.test(modelo3$residuals)
+```
+
+E temos normalidade, com **`p-value = 0.15`**, não rejeitamos a hipótese de normalidade dos resíduos.
+
+Concluimos que o nosso modelo é: **SARIMA(2,1,2)(0,1,1)[12] com uma variável dummy para o mês de dezembro de 2008**.
+
+
+#### Previsões
+
+
+Faremos a previsão para o ano de 2017, ou seja, para os meses de janeiro a setembro de 2017. Com isso, teremos duas abordagem: 
+
+  - A primeira é fazer previsão mês a mês. Faremos a previsão para um mês, cortaremos os dados, adicionando o valor referente a essa previsão e assim partimos pro próximo mês. A ideia é que a cada mês a previsão seja "melhorada" adicionando um informação nova, mas logo imediatamente anteiror;
+  
+  -  A segunda abordagem é a mais usual. Faremos a previsão direto para esses 9 meses, de uma vez só. 
+
+Para isso, criamos uma função que otimiza esse calculo e nos dá os valores das duas abordagem: 
+
+
+```{r}
+funcao <- function(h,dados,order,seasonal,lambda){
+  #definições premiliminares
+  previsoes = c()
+  n <- length(dados) 
+  i = h
+  
+  # esse for é para a previsão mês a mês
+  for(i in h:1){
+    y <- ts(dados[1:(n-i)],start=start(dados),freq=12)
+    y_dummy <- ts(dummy[1:(n-i)],start=start(dados),freq=12)
+    y_dummy_prev = tail(ts(dummy[1:(n-i+1)],start=start(dados),freq=12),1)
+    # para a previsão, precisamos reestimar o modelo, nesse caso, 
+    # mês a mês.
+    aux2 <- Arima(y,order = order,seasonal = seasonal,lambda = lambda,xreg=y_dummy)
+    previsoes[i] <- forecast(aux2,h=1,xreg = y_dummy_prev)$mean
+  }
+  # daqui para frente, temos a previsão para os meses de um vez só!
+    previsoes = ts(previsoes[h:1],end = end(dados),freq = 12)
+    
+    y <- ts(dados[1:(n-h)],start=start(dados),freq=12)
+    y_dummy2 = ts(dummy[1:(n-h)],start=start(dados),freq=12)
+    # para a previsão, precisamos reestimar o modelo
+    aux1 <- Arima(y,order = order,seasonal = seasonal,lambda = lambda,xreg=y_dummy2)
+    
+    y_dummy_prev2 <- ts(dummy[(n-h+1):n],end=end(dados),freq=12)
+    previsao2 <- forecast(aux1,h=h,xreg = y_dummy_prev2)$mean
+    
+    ##comparando as previsões junto com os dados originais
+    ts.plot(previsoes,previsao2,col=c(1,4))
+    lines(dados,col=2)
+    legend("topleft",legend = c("Dados","prev. mes a mes", "previsao normal"),lty = c(1,1,1),col = c(1,2,4),bty="n")
+  
+    return(list(prev1 = previsoes, prev2 = previsao2))
+}
+```
+
+Com uma passada rápida pelos parâmetros, temos:
+
+   - ***h*** é a quantidade de valores que queremos prever;
+   - ***dados*** ferente aos dados, série temporal em estudo;
+   - ***order*** é a ordem autorregressiava do nosso modelo geral SARIMA;
+   - ***seasonal*** é a ordem da parte sazonal do nosso modelo geral SARIMA;
+   - ***lambda*** é referente a transformação dos dados em log(x).
+   
+   
+```{r,message=FALSE,fig.align='center'}
+order = c(2,1,2)
+seasonal = c(0,1,1)
+h=9
+prev <- funcao(h=h,dados=dados,order=order,seasonal = seasonal,lambda = 0)
+```
+   
+Pelo gráfico, podemos ver que a previsão mês a mês é um pouco melhor consegue captar a tendência e acerta bem para alguns meses. Já a previsão para os meses de janeiro a setembro de 2017, ou seja, com h = 9  consegue captar melhor o comportamento da série. Com todo o aprendizado dos dados a previsão leva em conta todo o histórico na hora de prever, diferente da previsão um passo a frente e adicionando o mês da previsão. Todo mês adicionado, o modelo aprende e com isso faz uma previsão, pelo gráfico, mais razoavel. 
+
+Vamos calcular o erro de previsão e descobrir qual, de fato, é melhor. 
+
+
+```{r}
+comparacao <-  window(dados, start = c(2017,01),freq=12)
+comparacao
+prev$prev1
+prev$prev2
+```
+
+Com isso, concluímos que a previsão com o procedimento mês a mês é melhor porque apresenta valores mais próximos do real. 
+   
+   
