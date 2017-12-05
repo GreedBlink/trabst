@@ -139,7 +139,7 @@ round(x)
 
 O interessante observar que esse outlier está atrelado a crise econômica (**-5, valor em dez/2008**). A série sofre bastante com essa quebra estrutural. Como dito anteriormente, assume um valor muito discrepante do resto dos dados. 
 
-Entçao, criamos uma variável explicativa para os resíduos, pois sem ela, dificilmente o modelo conseguiria captar. Utilizando a função **`BETS.dummy`**, temos:
+Então, criamos uma variável explicativa para os resíduos, pois sem ela, dificilmente o modelo conseguiria captar. Utilizando a função **`BETS.dummy`**, temos:
 
 ```{r}
 dummy <-  BETS.dummy(start = c(2002,01),end = c(2017,09),month =12 ,year = 2008 ,frequency = 12)
@@ -148,7 +148,7 @@ dummy
 
 Uma dummy é uma variável qualitativa, sendo o caso mas simples a variável que atribui 1 para uma categoria e 0 para a categoria mutuamente exclusiva a primeira.
 
-Com a variável criada, reestimamos os modelo adicionando essa variável dummy com o parâmetro **`xreg`** na função **`Arima()`**. 
+Com a variável criada, reestimamos o modelo adicionando essa variável dummy com o parâmetro **`xreg`** na função **`Arima()`**. 
 
 ```{r}
 modelo2 <- Arima(dados,order= c(3,1,2),seasonal = c(0,1,1),lambda = 0,xreg=dummy)
@@ -172,13 +172,13 @@ shapiro.test(modelo2$residuals)
    - E, parece, que o modelo está captando bem a lineariedade dos dados.
 
 
-Repetindo, verificamos quais parametros do novo modelo são significatens com a função **`BETS.t_test()`**: 
+Repetindo, verificamos quais parâmetros do novo modelo são significatens com a função **`BETS.t_test()`**: 
 
 ```{r,message=FALSE,fig.align='center'}
 BETS.t_test(modelo2)
 ```
 
-Podemos ver que a dummy é significativa, o que corrobora com a necessidade de introduzi-la ao modelo para controlar os resíduos, mas que o terceiro parâmetro da parte autorregressiva não é significativo e precisamos retirálo do modelo.
+Podemos ver que a dummy é significativa, o que corrobora com a necessidade de introduzi-la ao modelo para controlar os resíduos, mas que o terceiro parâmetro da parte autorregressiva não é significativo e precisamos retirá-lo.
 
 ```{r}
 modelo3 <- Arima(dados,order = c(2,1,2),seasonal = c(0,1,1),lambda = 0,xreg=dummy)
@@ -276,6 +276,21 @@ comparacao <-  window(dados, start = c(2017,01),freq=12)
 comparacao
 prev$prev1
 prev$prev2
+
+#Erro médio quadrático
+```
+
+```{r}
+sqrt(mean((comparacao - prev$prev1)^2))
+sqrt(mean((comparacao - prev$prev2)^2))
+```
+
+```{r}
+#map 
+#Erro absoluto percentual médio
+mean(abs(comparacao - prev$prev1)/comparacao)*100
+mean(abs(comparacao - prev$prev2)/comparacao)*100
+
 ```
 
 Com isso, concluímos que a previsão com o procedimento mês a mês é melhor porque apresenta valores mais próximos do real. 
