@@ -24,8 +24,7 @@ require(TSA)
 require(dygraphs)
 require(tidyr)
 dados <-  BETS.sidra.get(x = c(3653), from = c("200201"), to = c("201710"), territory = "brazil",variable = 3135, sections = c(129316), cl = 544)
-dados <- ts(dados$serie_3653$Valor,start = c(2002,01),frequency = 12)
-
+dados <- ts(dados$serie_3653$Valor,start = c(2002,01),end =c(2017,09),frequency = 12)
 ```
 <br><br>
 
