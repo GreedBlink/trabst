@@ -281,8 +281,8 @@ prev$prev2
 ```
 
 ```{r}
-sqrt(mean((comparacao - prev$prev1)^2))
-sqrt(mean((comparacao - prev$prev2)^2))
+(mean((comparacao - prev$prev1)^2))
+(mean((comparacao - prev$prev2)^2))
 ```
 
 ```{r}
