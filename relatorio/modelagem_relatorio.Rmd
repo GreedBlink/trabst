@@ -40,9 +40,13 @@ dygraph(dados) %>% dyRangeSelector()
 
 É interessante notar o logarítimo dos dados, ele não muda de fato a série, mas veremos que ele nos ajuda a controlar os resíduos.
 
-```{r,message=FALSE,fig.align='center',fig.width=9, fig.height=4}
-dygraph(log(dados)) %>% dyRangeSelector()
-``` 
+Antes de ir para o modo manual de identificação e estimação do modelo, vamos usar a função `auto.arima()`. A função nos dará um modelo, considerando as combinações feitas internamente no algoritmo. 
+
+
+```{r autoarima,message = FALSE}
+modelo_auto.arima <- auto.arima(dados);modelo_auto.arima
+```
+
 
 
 
@@ -94,6 +98,7 @@ Ordem 3 para a parte autorregressiva não sazonal e 1 ordem para a parte autorre
 
 ```{r,message=FALSE,fig.align='center'}
 modelo = Arima(dados,order= c(3,1,2),seasonal = c(1,1,1),lambda = 0)
+modelo$aic
 
 ```
 
@@ -108,6 +113,7 @@ Vemos que o parametro autorregressivo sazonal é não significativo e é preciso
 
 ```{r}
 modelo = Arima(dados,order= c(3,1,2),seasonal = c(0,1,1),lambda = 0)
+modelo$aic
 ```
 
 
@@ -152,6 +158,7 @@ Com a variável criada, reestimamos o modelo adicionando essa variável dummy co
 
 ```{r}
 modelo2 <- Arima(dados,order= c(3,1,2),seasonal = c(0,1,1),lambda = 0,xreg=dummy)
+modelo2$aic
 ```
 
 
@@ -171,7 +178,6 @@ shapiro.test(modelo2$residuals)
    - Não temos nenhuma correlação significativa;
    - E, parece, que o modelo está captando bem a lineariedade dos dados.
 
-
 Repetindo, verificamos quais parâmetros do novo modelo são significatens com a função **`BETS.t_test()`**: 
 
 ```{r,message=FALSE,fig.align='center'}
@@ -182,6 +188,7 @@ Podemos ver que a dummy é significativa, o que corrobora com a necessidade de i
 
 ```{r}
 modelo3 <- Arima(dados,order = c(2,1,2),seasonal = c(0,1,1),lambda = 0,xreg=dummy)
+modelo3$aic
 ```
 
 E verificando os resíduos:
@@ -200,6 +207,15 @@ E temos normalidade, com **`p-value = 0.15`**, não rejeitamos a hipótese de no
 
 Concluimos que o nosso modelo é: **SARIMA(2,1,2)(0,1,1)[12] com uma variável dummy para o mês de dezembro de 2008**.
 
+A fim de comparação, podemos usar a função `auto.arima` novamente só que introduzindo a dummy craiada anteriormente para controlar o outlier de dezembro de 2008. 
+
+```{r}
+modelo2_auto.arima <-  auto.arima(dados,xreg = dummy,lambda = 0)
+modelo2_auto.arima$aic
+```
+
+
+Comparando os AIC's, temos que o auto.arima com a dummy tem um AIC tão bom quanto o modelo criado olhando as facs e facps. 
 
 #### Previsões
 
